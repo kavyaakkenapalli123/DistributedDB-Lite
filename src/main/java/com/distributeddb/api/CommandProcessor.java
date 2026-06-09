@@ -1,25 +1,45 @@
 package com.distributeddb.api;
 
 import com.distributeddb.model.Response;
+import com.distributeddb.replication.ReplicationManager;
 import com.distributeddb.storage.KeyValueStore;
 
 public class CommandProcessor {
 
     private final KeyValueStore store;
 
+    private ReplicationManager replicationManager;
+
     public CommandProcessor(KeyValueStore store) {
         this.store = store;
     }
 
+    public void setReplicationManager(
+            ReplicationManager replicationManager) {
+
+        this.replicationManager =
+                replicationManager;
+    }
+
+    /*
+     * Normal Client Commands
+     * Replication is enabled here.
+     */
     public Response process(String input) {
 
         if (input == null || input.isBlank()) {
-            return new Response(false, "Empty Command");
+
+            return new Response(
+                    false,
+                    "Empty Command"
+            );
         }
 
-        String[] parts = input.trim().split("\\s+");
+        String[] parts =
+                input.trim().split("\\s+");
 
-        String command = parts[0].toUpperCase();
+        String command =
+                parts[0].toUpperCase();
 
         try {
 
@@ -28,44 +48,82 @@ public class CommandProcessor {
                 case "SET":
 
                     if (parts.length < 3) {
-                        return new Response(false,
-                                "Usage: SET <key> <value>");
+
+                        return new Response(
+                                false,
+                                "Usage: SET <key> <value>"
+                        );
                     }
 
-                    store.set(parts[1], parts[2]);
+                    store.set(
+                            parts[1],
+                            parts[2]
+                    );
 
-                    return new Response(true, "OK");
+                    if (replicationManager != null) {
+
+                        replicationManager.replicate(
+                                input
+                        );
+                    }
+
+                    return new Response(
+                            true,
+                            "OK"
+                    );
 
                 case "GET":
 
                     if (parts.length < 2) {
-                        return new Response(false,
-                                "Usage: GET <key>");
+
+                        return new Response(
+                                false,
+                                "Usage: GET <key>"
+                        );
                     }
 
-                    String value = store.get(parts[1]);
+                    String value =
+                            store.get(parts[1]);
 
                     if (value == null) {
-                        return new Response(false,
-                                "Key Not Found");
+
+                        return new Response(
+                                false,
+                                "Key Not Found"
+                        );
                     }
 
-                    return new Response(true, value);
+                    return new Response(
+                            true,
+                            value
+                    );
 
                 case "DELETE":
 
                     if (parts.length < 2) {
-                        return new Response(false,
-                                "Usage: DELETE <key>");
+
+                        return new Response(
+                                false,
+                                "Usage: DELETE <key>"
+                        );
                     }
 
                     boolean deleted =
                             store.delete(parts[1]);
 
+                    if (deleted &&
+                            replicationManager != null) {
+
+                        replicationManager.replicate(
+                                input
+                        );
+                    }
+
                     return new Response(
                             deleted,
-                            deleted ? "Deleted" :
-                                    "Key Not Found"
+                            deleted
+                                    ? "Deleted"
+                                    : "Key Not Found"
                     );
 
                 case "KEYS":
@@ -79,10 +137,12 @@ public class CommandProcessor {
 
                     return new Response(
                             true,
-                            "Keys Stored: " + store.size()
+                            "Keys Stored: "
+                                    + store.size()
                     );
 
                 default:
+
                     return new Response(
                             false,
                             "Unknown Command"
@@ -90,8 +150,92 @@ public class CommandProcessor {
             }
 
         } catch (Exception e) {
-            return new Response(false,
-                    "Error: " + e.getMessage());
+
+            return new Response(
+                    false,
+                    "Error: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    /*
+     * Replicated Commands
+     * NO replication here.
+     */
+    public Response processReplication(
+            String input) {
+
+        if (input == null ||
+                input.isBlank()) {
+
+            return new Response(
+                    false,
+                    "Empty Command"
+            );
+        }
+
+        String[] parts =
+                input.trim().split("\\s+");
+
+        String command =
+                parts[0].toUpperCase();
+
+        try {
+
+            switch (command) {
+
+                case "SET":
+
+                    if (parts.length < 3) {
+
+                        return new Response(
+                                false,
+                                "Usage: SET <key> <value>"
+                        );
+                    }
+
+                    store.set(
+                            parts[1],
+                            parts[2]
+                    );
+
+                    return new Response(
+                            true,
+                            "REPLICATED"
+                    );
+
+                case "DELETE":
+
+                    if (parts.length < 2) {
+
+                        return new Response(
+                                false,
+                                "Usage: DELETE <key>"
+                        );
+                    }
+
+                    store.delete(
+                            parts[1]
+                    );
+
+                    return new Response(
+                            true,
+                            "REPLICATED"
+                    );
+
+                default:
+
+                    return process(input);
+            }
+
+        } catch (Exception e) {
+
+            return new Response(
+                    false,
+                    "Error: "
+                            + e.getMessage()
+            );
         }
     }
 }

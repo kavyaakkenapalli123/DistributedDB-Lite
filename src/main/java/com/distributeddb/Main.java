@@ -6,6 +6,7 @@ import com.distributeddb.config.ConfigLoader;
 import com.distributeddb.model.NodeInfo;
 import com.distributeddb.network.TcpClient;
 import com.distributeddb.network.TcpServer;
+import com.distributeddb.replication.ReplicationManager;
 import com.distributeddb.storage.KeyValueStore;
 
 import java.util.List;
@@ -17,18 +18,25 @@ public class Main {
         if (args.length == 0) {
 
             System.out.println("Usage:");
-            System.out.println("Server Mode : java com.distributeddb.Main server <nodeId>");
-            System.out.println("Client Mode : java com.distributeddb.Main client");
+            System.out.println(
+                    "Server Mode : java com.distributeddb.Main server <nodeId>"
+            );
+            System.out.println(
+                    "Client Mode : java com.distributeddb.Main client"
+            );
 
             return;
         }
 
-        KeyValueStore store = new KeyValueStore();
+        KeyValueStore store =
+                new KeyValueStore();
 
         CommandProcessor processor =
                 new CommandProcessor(store);
 
-        // SERVER MODE
+        /*
+         * SERVER MODE
+         */
         if ("server".equalsIgnoreCase(args[0])) {
 
             if (args.length < 2) {
@@ -73,6 +81,19 @@ public class Main {
 
                 clusterManager.printClusterInfo();
 
+                /*
+                 * Batch 5 Replication Setup
+                 */
+                ReplicationManager replicationManager =
+                        new ReplicationManager(
+                                nodes,
+                                currentNode.getId()
+                        );
+
+                processor.setReplicationManager(
+                        replicationManager
+                );
+
                 TcpServer server =
                         new TcpServer(
                                 currentNode.getPort(),
@@ -90,12 +111,12 @@ public class Main {
             } catch (Exception e) {
 
                 e.printStackTrace();
-
             }
-
         }
 
-        // CLIENT MODE
+        /*
+         * CLIENT MODE
+         */
         else if (
                 "client".equalsIgnoreCase(args[0])) {
 
@@ -112,9 +133,7 @@ public class Main {
             } catch (Exception e) {
 
                 e.printStackTrace();
-
             }
-
         }
 
         else {

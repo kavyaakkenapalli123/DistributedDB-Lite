@@ -1,14 +1,31 @@
 package com.distributeddb;
 
 import com.distributeddb.api.CommandProcessor;
-import com.distributeddb.model.Response;
+import com.distributeddb.network.TcpClient;
+import com.distributeddb.network.TcpServer;
 import com.distributeddb.storage.KeyValueStore;
-
-import java.util.Scanner;
+import com.distributeddb.util.Constants;
 
 public class Main {
 
     public static void main(String[] args) {
+
+        if (args.length == 0) {
+
+            System.out.println(
+                    "Usage:"
+            );
+
+            System.out.println(
+                    "server"
+            );
+
+            System.out.println(
+                    "client"
+            );
+
+            return;
+        }
 
         KeyValueStore store =
                 new KeyValueStore();
@@ -16,39 +33,26 @@ public class Main {
         CommandProcessor processor =
                 new CommandProcessor(store);
 
-        Scanner scanner =
-                new Scanner(System.in);
+        if ("server".equalsIgnoreCase(args[0])) {
 
-        System.out.println(
-                "DistributedDB Lite Started");
-        System.out.println(
-                "Commands: SET GET DELETE KEYS STATUS");
-        System.out.println(
-                "Type EXIT to quit");
+            TcpServer server =
+                    new TcpServer(
+                            Constants.SERVER_PORT,
+                            processor
+                    );
 
-        while (true) {
+            server.start();
 
-            System.out.print("> ");
+        } else if (
+                "client".equalsIgnoreCase(args[0])) {
 
-            String command =
-                    scanner.nextLine();
+            TcpClient client =
+                    new TcpClient();
 
-            if (command.equalsIgnoreCase("EXIT")) {
-                break;
-            }
-
-            Response response =
-                    processor.process(command);
-
-            System.out.println(
-                    response.getMessage()
+            client.start(
+                    "localhost",
+                    Constants.SERVER_PORT
             );
         }
-
-        scanner.close();
-
-        System.out.println(
-                "Database Shutdown"
-        );
     }
 }

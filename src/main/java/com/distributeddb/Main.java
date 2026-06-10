@@ -2,6 +2,9 @@ package com.distributeddb;
 
 import com.distributeddb.api.CommandProcessor;
 import com.distributeddb.cluster.ClusterManager;
+import com.distributeddb.cluster.HeartbeatSender;
+import com.distributeddb.cluster.NodeRole;
+import com.distributeddb.cluster.NodeState;
 import com.distributeddb.config.ConfigLoader;
 import com.distributeddb.model.NodeInfo;
 import com.distributeddb.network.TcpClient;
@@ -37,10 +40,6 @@ public class Main {
 
                 System.out.println(
                         "Please provide node id."
-                );
-
-                System.out.println(
-                        "Example: java com.distributeddb.Main server 1"
                 );
 
                 return;
@@ -91,19 +90,46 @@ public class Main {
                         replicationManager
                 );
 
+                NodeState state =
+                        new NodeState();
+
+                /*
+                 * Temporary Leader
+                 * Node1 acts as Leader
+                 */
+                if (nodeId == 1) {
+
+                    state.setRole(
+                            NodeRole.LEADER
+                    );
+
+                    Thread heartbeatThread =
+                            new Thread(
+                                    new HeartbeatSender(
+                                            nodes,
+                                            nodeId
+                                    )
+                            );
+
+                    heartbeatThread.setDaemon(
+                            true
+                    );
+
+                    heartbeatThread.start();
+
+                    System.out.println(
+                            "Leader Heartbeat Started"
+                    );
+                }
+
                 TcpServer server =
                         new TcpServer(
                                 currentNode.getPort(),
-                                processor
+                                processor,
+                                state
                         );
 
                 server.start();
-
-            } catch (NumberFormatException e) {
-
-                System.out.println(
-                        "Node ID must be a number."
-                );
 
             } catch (Exception e) {
 
@@ -137,10 +163,6 @@ public class Main {
 
             System.out.println(
                     "Invalid mode."
-            );
-
-            System.out.println(
-                    "Use 'server' or 'client'"
             );
         }
     }

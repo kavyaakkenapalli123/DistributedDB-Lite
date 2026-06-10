@@ -1,6 +1,7 @@
 package com.distributeddb.network;
 
 import com.distributeddb.api.CommandProcessor;
+import com.distributeddb.cluster.NodeState;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,12 +12,16 @@ public class TcpServer {
 
     private final int port;
     private final CommandProcessor processor;
+    private final NodeState state;
 
-    public TcpServer(int port,
-                     CommandProcessor processor) {
+    public TcpServer(
+            int port,
+            CommandProcessor processor,
+            NodeState state) {
 
         this.port = port;
         this.processor = processor;
+        this.state = state;
     }
 
     public void start() {
@@ -24,8 +29,12 @@ public class TcpServer {
         ExecutorService pool =
                 Executors.newCachedThreadPool();
 
-        try (ServerSocket serverSocket =
-                     new ServerSocket(port)) {
+        try (
+
+                ServerSocket serverSocket =
+                        new ServerSocket(port)
+
+        ) {
 
             System.out.println(
                     "Database Server Started on Port "
@@ -43,9 +52,11 @@ public class TcpServer {
                 );
 
                 pool.submit(
+
                         new ConnectionHandler(
                                 socket,
-                                processor
+                                processor,
+                                state
                         )
                 );
             }
@@ -53,7 +64,6 @@ public class TcpServer {
         } catch (Exception e) {
 
             e.printStackTrace();
-
         }
     }
 }

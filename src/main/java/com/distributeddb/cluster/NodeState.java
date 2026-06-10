@@ -6,11 +6,16 @@ public class NodeState {
     private int currentTerm;
     private int leaderId;
 
+    private volatile long lastHeartbeatTime;
+
     public NodeState() {
 
         role = NodeRole.FOLLOWER;
         currentTerm = 0;
         leaderId = -1;
+
+        lastHeartbeatTime =
+                System.currentTimeMillis();
     }
 
     public NodeRole getRole() {
@@ -35,5 +40,15 @@ public class NodeState {
 
     public void setLeaderId(int leaderId) {
         this.leaderId = leaderId;
+    }
+
+    public long getLastHeartbeatTime() {
+        return lastHeartbeatTime;
+    }
+
+    public void updateHeartbeat() {
+
+        lastHeartbeatTime =
+                System.currentTimeMillis();
     }
 }

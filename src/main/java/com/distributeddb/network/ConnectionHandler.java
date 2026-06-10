@@ -1,6 +1,8 @@
 package com.distributeddb.network;
 
 import com.distributeddb.api.CommandProcessor;
+import com.distributeddb.cluster.HeartbeatReceiver;
+import com.distributeddb.cluster.NodeState;
 import com.distributeddb.model.Response;
 
 import java.io.BufferedReader;
@@ -14,12 +16,18 @@ public class ConnectionHandler implements Runnable {
     private final Socket socket;
     private final CommandProcessor processor;
 
+    private final HeartbeatReceiver heartbeatReceiver;
+
     public ConnectionHandler(
             Socket socket,
-            CommandProcessor processor) {
+            CommandProcessor processor,
+            NodeState state) {
 
         this.socket = socket;
         this.processor = processor;
+
+        this.heartbeatReceiver =
+                new HeartbeatReceiver(state);
     }
 
     @Override
@@ -47,10 +55,20 @@ public class ConnectionHandler implements Runnable {
             while ((command = reader.readLine()) != null) {
 
                 /*
-                 * Replication command
-                 *
-                 * Example:
-                 * REPL SET name Kavya
+                 * Heartbeat Handling
+                 */
+                if ("HEARTBEAT".equals(command)) {
+
+                    heartbeatReceiver
+                            .receiveHeartbeat();
+
+                    writer.println("OK");
+
+                    continue;
+                }
+
+                /*
+                 * Replication Handling
                  */
                 if (command.startsWith("REPL ")) {
 
@@ -62,11 +80,9 @@ public class ConnectionHandler implements Runnable {
                                     + replicatedCommand
                     );
 
-                   processor.processReplication(
-                    replicatedCommand
-                   );
-
-        
+                    processor.processReplication(
+                            replicatedCommand
+                    );
 
                     writer.println(
                             "REPLICATED"
@@ -76,7 +92,7 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 /*
-                 * Normal client command
+                 * Normal Client Command
                  */
                 Response response =
                         processor.process(

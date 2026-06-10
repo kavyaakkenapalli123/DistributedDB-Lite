@@ -6,6 +6,8 @@ public class NodeState {
     private int currentTerm;
     private int leaderId;
 
+    private int votedFor;
+
     private volatile long lastHeartbeatTime;
 
     public NodeState() {
@@ -13,6 +15,8 @@ public class NodeState {
         role = NodeRole.FOLLOWER;
         currentTerm = 0;
         leaderId = -1;
+
+        votedFor = -1;
 
         lastHeartbeatTime =
                 System.currentTimeMillis();
@@ -40,6 +44,14 @@ public class NodeState {
 
     public void setLeaderId(int leaderId) {
         this.leaderId = leaderId;
+    }
+
+    public int getVotedFor() {
+        return votedFor;
+    }
+
+    public void setVotedFor(int votedFor) {
+        this.votedFor = votedFor;
     }
 
     public long getLastHeartbeatTime() {

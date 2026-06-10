@@ -2,6 +2,9 @@ package com.distributeddb;
 
 import com.distributeddb.api.CommandProcessor;
 import com.distributeddb.cluster.ClusterManager;
+import com.distributeddb.cluster.ElectionManager;
+import com.distributeddb.cluster.ElectionTimer;
+import com.distributeddb.cluster.HeartbeatManager;
 import com.distributeddb.cluster.HeartbeatSender;
 import com.distributeddb.cluster.NodeRole;
 import com.distributeddb.cluster.NodeState;
@@ -90,8 +93,46 @@ public class Main {
                         replicationManager
                 );
 
+                /*
+                 * Node State
+                 */
                 NodeState state =
                         new NodeState();
+
+                /*
+                 * Heartbeat Monitor
+                 */
+                HeartbeatManager heartbeatManager =
+                        new HeartbeatManager(
+                                state
+                        );
+
+                /*
+                 * Election Manager
+                 */
+                ElectionManager electionManager =
+                        new ElectionManager(
+                                state,
+                                nodeId
+                        );
+
+                /*
+                 * Election Timer
+                 */
+                Thread electionThread =
+                        new Thread(
+                                new ElectionTimer(
+                                        heartbeatManager,
+                                        electionManager,
+                                        state
+                                )
+                        );
+
+                electionThread.setDaemon(
+                        true
+                );
+
+                electionThread.start();
 
                 /*
                  * Temporary Leader
@@ -102,6 +143,8 @@ public class Main {
                     state.setRole(
                             NodeRole.LEADER
                     );
+
+                    state.setLeaderId(1);
 
                     Thread heartbeatThread =
                             new Thread(
@@ -130,6 +173,12 @@ public class Main {
                         );
 
                 server.start();
+
+            } catch (NumberFormatException e) {
+
+                System.out.println(
+                        "Node ID must be a number."
+                );
 
             } catch (Exception e) {
 
@@ -163,6 +212,10 @@ public class Main {
 
             System.out.println(
                     "Invalid mode."
+            );
+
+            System.out.println(
+                    "Use 'server' or 'client'"
             );
         }
     }

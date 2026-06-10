@@ -1,33 +1,34 @@
 package com.distributeddb.cluster;
 
+import com.distributeddb.model.NodeInfo;
+
+import java.util.List;
+
 public class ElectionManager {
 
     private final NodeState state;
     private final int nodeId;
+    private final List<NodeInfo> nodes;
 
     public ElectionManager(
             NodeState state,
-            int nodeId) {
+            int nodeId,
+            List<NodeInfo> nodes) {
 
         this.state = state;
         this.nodeId = nodeId;
+        this.nodes = nodes;
     }
 
     public void startElection() {
-
-        System.out.println("DEBUG A");
 
         state.setRole(
                 NodeRole.CANDIDATE
         );
 
-        System.out.println("DEBUG B");
-
         state.setCurrentTerm(
                 state.getCurrentTerm() + 1
         );
-
-        System.out.println("DEBUG C");
 
         state.setVotedFor(
                 nodeId
@@ -39,28 +40,31 @@ public class ElectionManager {
                         + " started election."
         );
 
-        System.out.println("DEBUG D");
+        VoteRequestSender sender =
+                new VoteRequestSender(
+                        nodes,
+                        nodeId
+                );
 
-        state.setRole(
-                NodeRole.LEADER
-        );
+        int votes =
+                sender.requestVotes();
 
-        System.out.println("DEBUG E");
+        if (votes >
+                nodes.size() / 2) {
 
-        state.setLeaderId(
-                nodeId
-        );
+            state.setRole(
+                    NodeRole.LEADER
+            );
 
-        System.out.println("DEBUG F");
+            state.setLeaderId(
+                    nodeId
+            );
 
-        System.out.println(
-                "Node "
-                        + nodeId
-                        + " became LEADER."
-        );
-
-        System.out.println(
-                "### LEADER PROMOTION COMPLETE ###"
-        );
+            System.out.println(
+                    "Node "
+                            + nodeId
+                            + " became LEADER."
+            );
+        }
     }
 }

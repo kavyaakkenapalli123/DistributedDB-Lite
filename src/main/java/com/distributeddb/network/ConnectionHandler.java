@@ -17,6 +17,7 @@ public class ConnectionHandler implements Runnable {
     private final CommandProcessor processor;
 
     private final HeartbeatReceiver heartbeatReceiver;
+    private final NodeState state;
 
     public ConnectionHandler(
             Socket socket,
@@ -25,6 +26,7 @@ public class ConnectionHandler implements Runnable {
 
         this.socket = socket;
         this.processor = processor;
+        this.state = state;
 
         this.heartbeatReceiver =
                 new HeartbeatReceiver(state);
@@ -63,6 +65,43 @@ public class ConnectionHandler implements Runnable {
                             .receiveHeartbeat();
 
                     writer.println("OK");
+
+                    continue;
+                }
+
+                /*
+                 * Vote Request Handling
+                 */
+                if (command.startsWith(
+                        "REQUEST_VOTE")) {
+
+                    String[] parts =
+                            command.split("\\s+");
+
+                    int candidateId =
+                            Integer.parseInt(parts[1]);
+
+                    if (state.getVotedFor() == -1) {
+
+                        state.setVotedFor(
+                                candidateId
+                        );
+
+                        System.out.println(
+                                "Voted for Node "
+                                        + candidateId
+                        );
+
+                        writer.println(
+                                "VOTE_GRANTED"
+                        );
+
+                    } else {
+
+                        writer.println(
+                                "VOTE_DENIED"
+                        );
+                    }
 
                     continue;
                 }

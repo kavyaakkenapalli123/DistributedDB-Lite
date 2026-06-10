@@ -113,7 +113,8 @@ public class Main {
                 ElectionManager electionManager =
                         new ElectionManager(
                                 state,
-                                nodeId
+                                nodeId,
+                                nodes
                         );
 
                 /*

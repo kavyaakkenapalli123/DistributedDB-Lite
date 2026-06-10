@@ -15,13 +15,19 @@ public class ElectionManager {
 
     public void startElection() {
 
+        System.out.println("DEBUG A");
+
         state.setRole(
                 NodeRole.CANDIDATE
         );
 
+        System.out.println("DEBUG B");
+
         state.setCurrentTerm(
                 state.getCurrentTerm() + 1
         );
+
+        System.out.println("DEBUG C");
 
         state.setVotedFor(
                 nodeId
@@ -31,6 +37,30 @@ public class ElectionManager {
                 "Node "
                         + nodeId
                         + " started election."
+        );
+
+        System.out.println("DEBUG D");
+
+        state.setRole(
+                NodeRole.LEADER
+        );
+
+        System.out.println("DEBUG E");
+
+        state.setLeaderId(
+                nodeId
+        );
+
+        System.out.println("DEBUG F");
+
+        System.out.println(
+                "Node "
+                        + nodeId
+                        + " became LEADER."
+        );
+
+        System.out.println(
+                "### LEADER PROMOTION COMPLETE ###"
         );
     }
 }

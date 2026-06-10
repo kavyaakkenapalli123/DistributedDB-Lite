@@ -2,6 +2,8 @@ package com.distributeddb.replication;
 
 import com.distributeddb.model.NodeInfo;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
@@ -16,23 +18,30 @@ public class ReplicationManager {
             int currentNodeId) {
 
         this.nodes = nodes;
-        this.currentNodeId = currentNodeId;
+        this.currentNodeId =
+                currentNodeId;
     }
 
-    public void replicate(String command) {
+    public ReplicationResult replicate(
+            String command) {
+
+        int acknowledgements = 1;
 
         System.out.println(
-                "Replicating command: " + command
+                "Replicating command: "
+                        + command
         );
 
         for (NodeInfo node : nodes) {
 
-            // Don't replicate to self
-            if (node.getId() == currentNodeId) {
+            if (node.getId() ==
+                    currentNodeId) {
+
                 continue;
             }
 
             try (
+
                     Socket socket =
                             new Socket(
                                     node.getHost(),
@@ -43,17 +52,34 @@ public class ReplicationManager {
                             new PrintWriter(
                                     socket.getOutputStream(),
                                     true
+                            );
+
+                    BufferedReader reader =
+                            new BufferedReader(
+                                    new InputStreamReader(
+                                            socket.getInputStream()
+                                    )
                             )
+
             ) {
 
                 writer.println(
                         "REPL " + command
                 );
 
-                System.out.println(
-                        "Replicated to Node "
-                                + node.getId()
-                );
+                String response =
+                        reader.readLine();
+
+                if ("REPLICATED"
+                        .equals(response)) {
+
+                    acknowledgements++;
+
+                    System.out.println(
+                            "Replicated to Node "
+                                    + node.getId()
+                    );
+                }
 
             } catch (Exception e) {
 
@@ -61,8 +87,11 @@ public class ReplicationManager {
                         "Replication failed to Node "
                                 + node.getId()
                 );
-
             }
         }
+
+        return new ReplicationResult(
+                acknowledgements
+        );
     }
 }

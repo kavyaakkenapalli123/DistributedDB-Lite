@@ -1,7 +1,9 @@
 package com.distributeddb.api;
 
 import com.distributeddb.model.Response;
+import com.distributeddb.replication.CommitManager;
 import com.distributeddb.replication.ReplicationManager;
+import com.distributeddb.replication.ReplicationResult;
 import com.distributeddb.storage.KeyValueStore;
 
 public class CommandProcessor {
@@ -23,7 +25,6 @@ public class CommandProcessor {
 
     /*
      * Normal Client Commands
-     * Replication is enabled here.
      */
     public Response process(String input) {
 
@@ -62,8 +63,30 @@ public class CommandProcessor {
 
                     if (replicationManager != null) {
 
-                        replicationManager.replicate(
-                                input
+                        ReplicationResult result =
+                                replicationManager
+                                        .replicate(input);
+
+                        CommitManager commitManager =
+                                new CommitManager(3);
+
+                        if (!commitManager
+                                .majorityReached(
+                                        result.getAcknowledgements()
+                                )) {
+
+                            return new Response(
+                                    false,
+                                    "WRITE FAILED"
+                            );
+                        }
+
+                        System.out.println(
+                                "Majority achieved."
+                        );
+
+                        System.out.println(
+                                "COMMIT SUCCESS"
                         );
                     }
 
@@ -114,8 +137,30 @@ public class CommandProcessor {
                     if (deleted &&
                             replicationManager != null) {
 
-                        replicationManager.replicate(
-                                input
+                        ReplicationResult result =
+                                replicationManager
+                                        .replicate(input);
+
+                        CommitManager commitManager =
+                                new CommitManager(3);
+
+                        if (!commitManager
+                                .majorityReached(
+                                        result.getAcknowledgements()
+                                )) {
+
+                            return new Response(
+                                    false,
+                                    "DELETE FAILED"
+                            );
+                        }
+
+                        System.out.println(
+                                "Majority achieved."
+                        );
+
+                        System.out.println(
+                                "DELETE COMMIT SUCCESS"
                         );
                     }
 
@@ -161,7 +206,7 @@ public class CommandProcessor {
 
     /*
      * Replicated Commands
-     * NO replication here.
+     * No further replication
      */
     public Response processReplication(
             String input) {
@@ -226,7 +271,10 @@ public class CommandProcessor {
 
                 default:
 
-                    return process(input);
+                    return new Response(
+                            false,
+                            "Unsupported Replication Command"
+                    );
             }
 
         } catch (Exception e) {

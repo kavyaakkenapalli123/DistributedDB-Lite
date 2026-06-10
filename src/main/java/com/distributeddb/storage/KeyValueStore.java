@@ -58,4 +58,29 @@ public class KeyValueStore {
 
         return store.size();
     }
+
+    /*
+     * Batch 9 Recovery Support
+     */
+
+    public Map<String, String> getAll() {
+
+        return new ConcurrentHashMap<>(
+                store
+        );
+    }
+
+    public void replaceAll(
+            Map<String, String> newData) {
+
+        store.clear();
+
+        store.putAll(
+                newData
+        );
+
+        persistence.save(
+                store
+        );
+    }
 }

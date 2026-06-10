@@ -14,9 +14,11 @@ public class PersistenceManager {
                 "data/node"
                         + nodeId
                         + ".db";
+
         System.out.println(
-            "Using file: " + fileName
-        );                
+                "Using file: "
+                        + fileName
+        );
     }
 
     public void save(
@@ -28,6 +30,7 @@ public class PersistenceManager {
                     new File("data");
 
             if (!dir.exists()) {
+
                 dir.mkdirs();
             }
 
@@ -67,6 +70,7 @@ public class PersistenceManager {
                 new File(fileName);
 
         if (!file.exists()) {
+
             return store;
         }
 
@@ -102,5 +106,14 @@ public class PersistenceManager {
         }
 
         return store;
+    }
+
+    /*
+     * Batch 9 Recovery Support
+     */
+
+    public String getFileName() {
+
+        return fileName;
     }
 }

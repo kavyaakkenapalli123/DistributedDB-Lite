@@ -14,6 +14,8 @@ import com.distributeddb.network.TcpClient;
 import com.distributeddb.network.TcpServer;
 import com.distributeddb.replication.ReplicationManager;
 import com.distributeddb.storage.KeyValueStore;
+import com.distributeddb.recovery.SyncClient;
+import com.distributeddb.recovery.SyncManager;
 
 import java.util.List;
 
@@ -55,6 +57,9 @@ public class Main {
 
                 KeyValueStore store =
                         new KeyValueStore(nodeId);
+                SyncManager syncManager = new SyncManager(
+                        store
+                );
 
                 CommandProcessor processor =
                         new CommandProcessor(store);
@@ -170,8 +175,17 @@ public class Main {
                         new TcpServer(
                                 currentNode.getPort(),
                                 processor,
-                                state
+                                state,
+                                syncManager
                         );
+                if(nodeId != 1){
+                        SyncClient syncClient =
+                               new SyncClient();
+                        syncClient.requestSync(
+                                "localhost",
+                                5001
+                        );
+                }
 
                 server.start();
 

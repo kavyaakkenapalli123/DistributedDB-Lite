@@ -4,6 +4,8 @@ import com.distributeddb.api.CommandProcessor;
 import com.distributeddb.cluster.HeartbeatReceiver;
 import com.distributeddb.cluster.NodeState;
 import com.distributeddb.model.Response;
+import com.distributeddb.recovery.SyncManager;
+import com.distributeddb.recovery.SyncResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,18 +17,20 @@ public class ConnectionHandler implements Runnable {
 
     private final Socket socket;
     private final CommandProcessor processor;
-
     private final HeartbeatReceiver heartbeatReceiver;
     private final NodeState state;
+    private final SyncManager syncManager;
 
     public ConnectionHandler(
             Socket socket,
             CommandProcessor processor,
-            NodeState state) {
+            NodeState state,
+            SyncManager syncManager) {
 
         this.socket = socket;
         this.processor = processor;
         this.state = state;
+        this.syncManager = syncManager;
 
         this.heartbeatReceiver =
                 new HeartbeatReceiver(state);
@@ -55,6 +59,26 @@ public class ConnectionHandler implements Runnable {
             String command;
 
             while ((command = reader.readLine()) != null) {
+
+                /*
+                 * Sync Handling
+                 */
+                if ("SYNC_REQUEST"
+                        .equals(command)) {
+
+                    SyncResponse response =
+                            syncManager.exportData();
+
+                    writer.println(
+                            "SYNC_OK "
+                                    + response
+                                    .getData()
+                                    .size()
+                                    + " entries"
+                    );
+
+                    continue;
+                }
 
                 /*
                  * Heartbeat Handling
@@ -131,7 +155,7 @@ public class ConnectionHandler implements Runnable {
                 }
 
                 /*
-                 * Normal Client Command
+                 * Normal Commands
                  */
                 Response response =
                         processor.process(

@@ -10,10 +10,12 @@ public class KeyValueStore {
 
     private final PersistenceManager persistence;
 
-    public KeyValueStore() {
+    public KeyValueStore(int nodeId) {
 
         persistence =
-                new PersistenceManager();
+                new PersistenceManager(
+                        nodeId
+                );
 
         store =
                 new ConcurrentHashMap<>(

@@ -28,12 +28,6 @@ public class Main {
             return;
         }
 
-        KeyValueStore store =
-                new KeyValueStore();
-
-        CommandProcessor processor =
-                new CommandProcessor(store);
-
         /*
          * SERVER MODE
          */
@@ -56,6 +50,12 @@ public class Main {
 
                 int nodeId =
                         Integer.parseInt(args[1]);
+
+                KeyValueStore store =
+                        new KeyValueStore(nodeId);
+
+                CommandProcessor processor =
+                        new CommandProcessor(store);
 
                 List<NodeInfo> nodes =
                         ConfigLoader.loadNodes();
@@ -81,9 +81,6 @@ public class Main {
 
                 clusterManager.printClusterInfo();
 
-                /*
-                 * Batch 5 Replication Setup
-                 */
                 ReplicationManager replicationManager =
                         new ReplicationManager(
                                 nodes,

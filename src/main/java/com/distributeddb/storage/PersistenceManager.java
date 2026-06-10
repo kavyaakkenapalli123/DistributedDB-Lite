@@ -6,8 +6,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PersistenceManager {
 
-    private static final String FILE_NAME =
-            "data/database.txt";
+    private final String fileName;
+
+    public PersistenceManager(int nodeId) {
+
+        this.fileName =
+                "data/node"
+                        + nodeId
+                        + ".db";
+        System.out.println(
+            "Using file: " + fileName
+        );                
+    }
 
     public void save(
             Map<String, String> store) {
@@ -23,7 +33,9 @@ public class PersistenceManager {
 
             BufferedWriter writer =
                     new BufferedWriter(
-                            new FileWriter(FILE_NAME)
+                            new FileWriter(
+                                    fileName
+                            )
                     );
 
             for (Map.Entry<String, String> entry :
@@ -43,7 +55,6 @@ public class PersistenceManager {
         } catch (Exception e) {
 
             e.printStackTrace();
-
         }
     }
 
@@ -53,7 +64,7 @@ public class PersistenceManager {
                 new ConcurrentHashMap<>();
 
         File file =
-                new File(FILE_NAME);
+                new File(fileName);
 
         if (!file.exists()) {
             return store;
@@ -88,7 +99,6 @@ public class PersistenceManager {
         } catch (Exception e) {
 
             e.printStackTrace();
-
         }
 
         return store;
